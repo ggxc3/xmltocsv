@@ -128,6 +128,12 @@ fn output_path(input: String, profile: Profile, dir: Option<String>) -> String {
         .into_owned()
 }
 
+/// Vráti tie z ciest, ktoré už existujú (na potvrdenie prepísania).
+#[tauri::command]
+fn existing_files(paths: Vec<String>) -> Vec<String> {
+    paths.into_iter().filter(|p| Path::new(p).exists()).collect()
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ConvertResult {
@@ -168,6 +174,7 @@ pub fn run() {
             inspect_xml,
             preview,
             output_path,
+            existing_files,
             convert,
         ])
         .run(tauri::generate_context!())

@@ -185,6 +185,18 @@ async function convertFiles(paths: string[]) {
     const dir = await open({ directory: true, defaultPath: dirName(paths[0]), title: "Kam uložiť CSV súbory?" });
     if (!dir) return;
     outputs = await Promise.all(paths.map((p) => api.outputPath(p, profile, dir)));
+
+    // Pri jednom súbore sa na prepísanie pýta systémový dialóg, tu to musíme spraviť sami.
+    const existing = await api.existingFiles(outputs);
+    if (existing.length) {
+      const shown = existing.slice(0, 8).map((p) => `• ${fileName(p)}`);
+      if (existing.length > shown.length) shown.push(`… a ďalšie (${existing.length - shown.length})`);
+      const overwrite = await ask(
+        `${existing.length === 1 ? "Tento súbor už existuje" : "Tieto súbory už existujú"}:\n\n${shown.join("\n")}\n\nPrepísať?`,
+        { title: "Súbory už existujú", kind: "warning", okLabel: "Prepísať", cancelLabel: "Zrušiť" },
+      );
+      if (!overwrite) return;
+    }
   }
 
   state.busy = true;

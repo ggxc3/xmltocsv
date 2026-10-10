@@ -5,7 +5,7 @@ Desktopová aplikácia (Tauri), ktorá prevádza XML merania z **PROMAX RANGER N
 ## Používanie
 
 1. Pretiahni XML súbor(y) do okna, alebo klikni a vyber.
-2. Zvoľ, kam uložiť CSV (pri viacerých súboroch sa vyberá priečinok).
+2. Zvoľ, kam uložiť CSV (pri viacerých súboroch sa vyberá priečinok; ak tam už CSV existujú, aplikácia sa spýta, či ich prepísať).
 
 Predvolený profil **MPX** nič nastavovať nepotrebuje.
 

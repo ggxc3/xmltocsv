@@ -57,6 +57,7 @@ export const api = {
   preview: (path: string, profile: Profile, rows: number) => invoke<Table>("preview", { path, profile, rows }),
   outputPath: (input: string, profile: Profile, dir?: string) =>
     invoke<string>("output_path", { input, profile, dir: dir ?? null }),
+  existingFiles: (paths: string[]) => invoke<string[]>("existing_files", { paths }),
   convert: (input: string, output: string, profile: Profile) =>
     invoke<ConvertResult>("convert", { input, output, profile }),
 };
