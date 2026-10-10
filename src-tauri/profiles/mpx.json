@@ -1,0 +1,184 @@
+{
+  "id": "mpx",
+  "name": "MPX",
+  "skip": 10,
+  "fileName": "MeranieMPX_{nazov}.csv",
+  "columns": [
+    {
+      "name": "Time Stamp",
+      "unit": "",
+      "source": {
+        "type": "date"
+      },
+      "triple": false
+    },
+    {
+      "name": "TimeStamp",
+      "unit": "",
+      "source": {
+        "type": "time"
+      },
+      "triple": false
+    },
+    {
+      "name": "Level",
+      "unit": "dBm",
+      "source": {
+        "type": "measure",
+        "tag": "LEVEL"
+      },
+      "triple": true,
+      "offset": -107
+    },
+    {
+      "name": "MPX Power",
+      "unit": "dBr",
+      "source": {
+        "type": "measure",
+        "tag": "MODULATIONPOWER"
+      },
+      "triple": true
+    },
+    {
+      "name": "Peak Deviation",
+      "unit": "Hz",
+      "source": {
+        "type": "constant",
+        "value": "0.0"
+      },
+      "triple": true
+    },
+    {
+      "name": "RF Offset",
+      "unit": "Hz",
+      "source": {
+        "type": "constant",
+        "value": "0.0"
+      },
+      "triple": true
+    },
+    {
+      "name": "Deviation MPX",
+      "unit": "Hz",
+      "source": {
+        "type": "measure",
+        "tag": "MPXFREQUENCYDEVIATION"
+      },
+      "triple": true,
+      "multiply": 1000
+    },
+    {
+      "name": "Deviation M",
+      "unit": "Hz",
+      "source": {
+        "type": "constant",
+        "value": "0.0"
+      },
+      "triple": true
+    },
+    {
+      "name": "Deviation Pilot",
+      "unit": "Hz",
+      "source": {
+        "type": "constant",
+        "value": "0.0"
+      },
+      "triple": true
+    },
+    {
+      "name": "Deviation S",
+      "unit": "Hz",
+      "source": {
+        "type": "constant",
+        "value": "0.0"
+      },
+      "triple": true
+    },
+    {
+      "name": "Deviation RDS",
+      "unit": "Hz",
+      "source": {
+        "type": "constant",
+        "value": "0.0"
+      },
+      "triple": true
+    },
+    {
+      "name": "Deviation DARC",
+      "unit": "Hz",
+      "source": {
+        "type": "constant",
+        "value": "0.0"
+      },
+      "triple": true
+    },
+    {
+      "name": "Deviation SCA",
+      "unit": "Hz",
+      "source": {
+        "type": "constant",
+        "value": "0.0"
+      },
+      "triple": true
+    },
+    {
+      "name": "AM Depth",
+      "unit": "%",
+      "source": {
+        "type": "measure",
+        "tag": "AMDEPTH"
+      },
+      "triple": true
+    },
+    {
+      "name": "GPS Longitude",
+      "unit": "",
+      "source": {
+        "type": "constant",
+        "value": "INV"
+      },
+      "triple": false
+    },
+    {
+      "name": "GPS Latitude",
+      "unit": "",
+      "source": {
+        "type": "constant",
+        "value": "INV"
+      },
+      "triple": false
+    },
+    {
+      "name": "GPS Altitude",
+      "unit": "",
+      "source": {
+        "type": "constant",
+        "value": "INV"
+      },
+      "triple": false
+    },
+    {
+      "name": "GPS HDOP",
+      "unit": "",
+      "source": {
+        "type": "constant",
+        "value": "INV"
+      },
+      "triple": false
+    }
+  ],
+  "ignoredTags": [
+    "LFREQUENCYDEVIATION",
+    "RFREQUENCYDEVIATION",
+    "STEREOPILOTFREQUENCYDEVIATION",
+    "RDSFREQUENCYDEVIATION",
+    "LPLUSRFREQUENCYDEVIATION",
+    "LMINUSRFREQUENCYDEVIATION",
+    "LAUDIOLEVEL",
+    "RAUDIOLEVEL",
+    "LPLUSRAUDIOLEVEL",
+    "LMINUSRAUDIOLEVEL",
+    "OFFSET",
+    "RDSPHASE"
+  ]
+}

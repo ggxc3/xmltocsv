@@ -1,0 +1,156 @@
+name: Release (semver)
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Auto inkrement (patch/minor/major). Ignoruje sa, ak je vyplnená Explicitná verzia."
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      version_override:
+        description: "Voliteľné: presná verzia X.Y.Z (prepíše auto inkrement). Musí byť vyššia ako aktuálna v package.json."
+        type: string
+        required: false
+        default: ""
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Rust tests
+        run: cargo test
+        working-directory: src-tauri
+
+      # Verzia je v package.json (tauri.conf.json ju odtiaľ číta) a v src-tauri/Cargo.toml.
+      - name: Prepare version
+        id: ver
+        env:
+          BUMP: ${{ inputs.bump }}
+          VERSION_OVERRIDE: ${{ inputs.version_override }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $cur = (Get-Content package.json -Raw | ConvertFrom-Json).version.Trim()
+          if ($cur -notmatch '^(\d+)\.(\d+)\.(\d+)$') {
+            throw "package.json version must be semver MAJOR.MINOR.PATCH, got: $cur"
+          }
+          $curVer = [version]$cur
+
+          $rawOverride = $env:VERSION_OVERRIDE
+          if ($null -eq $rawOverride) { $rawOverride = "" }
+          $override = $rawOverride.Trim()
+
+          if ($override -ne "") {
+            if ($override -notmatch '^\d+\.\d+\.\d+$') {
+              throw "Explicitná verzia musí byť MAJOR.MINOR.PATCH (čísla), napr. 2.0.0. Zadané: '$override'"
+            }
+            $new = $override
+            if ([version]$new -le $curVer) {
+              throw "Explicitná verzia musí byť vyššia ako aktuálna v repozitári ($cur). Zadané: $new"
+            }
+          } else {
+            $major = [int]$Matches[1]; $minor = [int]$Matches[2]; $patch = [int]$Matches[3]
+            switch ($env:BUMP) {
+              "major" { $major++; $minor = 0; $patch = 0 }
+              "minor" { $minor++; $patch = 0 }
+              "patch" { $patch++ }
+              default { throw "Unknown bump: $($env:BUMP)" }
+            }
+            $new = "$major.$minor.$patch"
+          }
+
+          $tag = "v$new"
+          $remoteTag = git ls-remote origin "refs/tags/$tag"
+          if ($remoteTag) { throw "Tag $tag už existuje na remote. Vyber vyšší bump alebo vymaž starý tag." }
+
+          npm version $new --no-git-tag-version
+          if ($LASTEXITCODE -ne 0) { throw "npm version failed" }
+
+          # Nahradí iba prvý riadok `version = "..."` (sekcia [package]).
+          # Replacement cez scriptblock, aby "$1" + číslo nevytvorilo odkaz na neexistujúcu skupinu.
+          $utf8 = [System.Text.UTF8Encoding]::new($false)
+          $cargo = Get-Content src-tauri/Cargo.toml -Raw
+          $regex = [regex]'(?m)^(version\s*=\s*")[^"]+(")'
+          $cargo = $regex.Replace($cargo, { param($m) $m.Groups[1].Value + $new + $m.Groups[2].Value }, 1)
+          [System.IO.File]::WriteAllText((Resolve-Path src-tauri/Cargo.toml), $cargo, $utf8)
+
+          "version=$new" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        shell: pwsh
+
+      - name: Build Tauri app (Windows)
+        run: npm run tauri build -- --no-bundle
+
+      - name: Rename EXE with release version
+        id: exe_meta
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $exeName = "XmlToCsv_${v}.exe"
+          $exe = Get-Item src-tauri/target/release/xmltocsv.exe -ErrorAction SilentlyContinue
+          if (-not $exe) { throw "EXE not found: src-tauri/target/release/xmltocsv.exe" }
+          New-Item -ItemType Directory -Path dist-release -Force | Out-Null
+          Copy-Item $exe.FullName "dist-release/$exeName"
+          Get-ChildItem dist-release | Format-Table Name, Length
+          "exe_name=$exeName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        shell: pwsh
+
+      - name: Commit, tag, and push version
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = "${{ steps.ver.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+          git status
+          git commit -m "Release $tag [skip ci]"
+          git tag -a $tag -m "Release $tag"
+          git push --atomic origin HEAD:main $tag
+        shell: pwsh
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: ${{ steps.ver.outputs.tag }}
+          generate_release_notes: true
+          body: |
+            **Stiahnuť:** `${{ steps.exe_meta.outputs.exe_name }}` (Assets). Stačí spustiť, inštalácia nie je potrebná.
+          files: dist-release/${{ steps.exe_meta.outputs.exe_name }}

@@ -1,0 +1,2 @@
+# Testovacie súbory musia zostať bajt po bajte (CRLF), aj pri checkout na Windows.
+src-tauri/tests/fixtures/* -text
