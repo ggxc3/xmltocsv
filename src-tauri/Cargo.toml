@@ -1,6 +1,6 @@
 [package]
 name = "xmltocsv"
-version = "0.1.0"
+version = "0.1.1"
 description = "Prevod XML meraní z PROMAX RANGER Neo do CSV"
 authors = ["ggxc3"]
 edition = "2024"
